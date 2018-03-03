@@ -290,7 +290,7 @@ def sentence_vectorize_features(sa, sb, idf_weight, convey='idf'):
     ensure idf_weight contains all words in seq1 and seq2
     to achieve this, idf_weight format should be the same with seq1
     e.g., train_instance.get_word(type='lemma', lower=True)
-    :param idf_weight: dict
+    :param idf_weight: dic
     :param convey: 'idf' or 'count'
     :return:
     """
@@ -363,7 +363,7 @@ def load_word_embedding(vocab, emb_file, n_dim,
     UPDATE_0: save the oov words in oov.p (pickle)
     Pros: to analysis why the this happen !!!
     ===
-    :param vocab: dict, vocab['__UNK__'] = 0
+    :param vocab: dic, vocab['__UNK__'] = 0
     :param emb_file: str, file_path
     :param n_dim:
     :param pad_word
@@ -418,7 +418,7 @@ def load_word_embedding(vocab, emb_file, n_dim,
 def load_embedding_from_text(emb_file, n_dim,
                              pad_word='__PAD__', unk_word='__UNK__'):
     """
-    :return: embed: numpy, vocab2id: dict
+    :return: embed: numpy, vocab2id: dic
     """
     print('==> loading embed from txt')
 

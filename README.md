@@ -1,8 +1,5 @@
 
-
-
-
-    -  [Project architecture](#project-architecture)
+-  [Project architecture](#project-architecture)
 
 
 

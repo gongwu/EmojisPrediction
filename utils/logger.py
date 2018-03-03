@@ -18,7 +18,7 @@ class Logger(object):
         :param step: the step of the summary
         :param summerizer: use the train summary writer or the test one
         :param scope: variable scope
-        :param summaries_dict: the dict of the summaries values (tag,value)
+        :param summaries_dict: the dic of the summaries values (tag,value)
         :return:
         """
         summary_writer = self.train_summary_writer if summerizer == "train" else self.test_summary_writer

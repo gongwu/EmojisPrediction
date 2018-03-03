@@ -469,7 +469,7 @@ def load_fasttext(word2index, emb_file, n_dim=100):
     UPDATE_0: save the oov words in oov.p (pickle)
     Pros: to analysis why the this happen !!!
     ===
-    :param word2index: dict, word2index['__UNK__'] = 0
+    :param word2index: dic, word2index['__UNK__'] = 0
     :param emb_file: str, file_path
     :param n_dim:
     :return: np.array(n_words, n_dim)
@@ -484,7 +484,7 @@ def load_word_embedding(word2index, emb_file, config, n_dim=300):
     UPDATE_0: save the oov words in oov.p (pickle)
     Pros: to analysis why the this happen !!!
     ===
-    :param word2index: dict, word2index['__UNK__'] = 0
+    :param word2index: dic, word2index['__UNK__'] = 0
     :param emb_file: str, file_path
     :param n_dim:
     :return: np.array(n_words, n_dim)
@@ -532,7 +532,7 @@ def load_word_embedding(word2index, emb_file, config, n_dim=300):
 
 def load_embed_from_text(emb_file, token_dim):
     """
-    :return: embed: numpy, vocab2id: dict
+    :return: embed: numpy, vocab2id: dic
     """
     print('==> loading embed from txt')
 

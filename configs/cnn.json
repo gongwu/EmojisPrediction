@@ -12,5 +12,5 @@
   "max_epoch": 30,
   "max_to_keep": 1,
   "threshold": 5,
-  "init": "False"
+  "init": "True"
 }
