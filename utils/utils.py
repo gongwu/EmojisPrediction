@@ -19,7 +19,7 @@ def get_args():
     argparser.add_argument(
         '-c', '--config',
         metavar='C',
-        default='../configs/cnn.json',
+        default='../configs/config.json',
         help='The Configuration file')
     args = argparser.parse_args()
     return args

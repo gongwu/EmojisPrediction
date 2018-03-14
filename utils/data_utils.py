@@ -6,6 +6,8 @@ import os
 import pickle
 import json
 import itertools
+import codecs
+
 
 pad_word = '__PAD__'
 unk_word = '__UNK__'
@@ -13,7 +15,27 @@ unk_word = '__UNK__'
 # punc = set([".", ",", "?", "!", "...", ";"])
 
 
-def read_data(file_list, segmenter):
+def read_data(file_list):
+    """
+    load data from file list
+    Args: file_list:
+    Returns:
+    """
+    if type(file_list) != list:
+        file_list = [file_list]
+
+    examples = []
+    for file in file_list:
+        with codecs.open(file, 'r', encoding='utf8') as f:
+            for line in f:
+                items = line.strip().split('\t')
+                label = items[0]
+                sent = items[1].split()
+                examples.append((sent, label))
+    return examples
+
+
+def read_json_data(file_list, segmenter):
     if type(file_list) != list:
         file_list = [file_list]
     examples = []

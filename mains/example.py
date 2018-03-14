@@ -1,9 +1,14 @@
 import tensorflow as tf
-
-from data_loader.data_generator import DataGenerator
+from configs.config_twitter import process_config
+# from configs.config_news import process_config
+from data_loader.twitter_data_generator import TwitterDataGenerator
+from data_loader.news_data_generator import NewsDataGenerator
+from models.NBoW_model import NBoWModel
+from trainers.NBow_trainer import NBowTrainer
 from models.CNN_model import CNNModel
 from trainers.CNN_trainer import CNNTrainer
-from utils.config import process_config
+from models.LSTM_model import LSTMModel
+from trainers.LSTM_trainer import LSTMTrainer
 from utils.dirs import create_dirs
 from utils.logger import Logger
 from utils.utils import get_args
@@ -20,20 +25,31 @@ def main():
         exit(0)
 
     # create the experiments dirs
-    create_dirs([config.summary_dir, config.dev_model_file])
+    create_dirs([config.summary_dir, config.checkpoint_dir, config.dic_dir, config.result_dir])
     # create tensorflow session
     gpu_config = tf.ConfigProto()
     gpu_config.gpu_options.allow_growth = True
     sess = tf.Session(config=gpu_config)
     # create your data generator
-    data = DataGenerator(config)
+    # data = TwitterDataGenerator(config)
+    data = TwitterDataGenerator(config)
     # create instance of the model you want
-    model = CNNModel(config, data)
     # create tensorboard logger
-    logger = Logger(sess, config)
     # create trainer and path all previous components to it
-    trainer = CNNTrainer(sess, model, data, config, logger)
-
+    if config.model == 'nbow':
+        model = NBoWModel(config, data)
+        logger = Logger(sess, config)
+        trainer = NBowTrainer(sess, model, data, config, logger)
+    elif config.model == 'cnn':
+        model = CNNModel(config, data)
+        logger = Logger(sess, config)
+        trainer = CNNTrainer(sess, model, data, config, logger)
+    elif config.model == 'lstm':
+        model = LSTMModel(config, data)
+        logger = Logger(sess, config)
+        trainer = LSTMTrainer(sess, model, data, config, logger)
+    else:
+        raise NotImplementedError
     # here you train your model
     trainer.train()
 

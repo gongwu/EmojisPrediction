@@ -2,9 +2,9 @@
 from base.base_train import BaseTrain
 
 
-class CNNTrainer(BaseTrain):
+class LSTMTrainer(BaseTrain):
     def __init__(self, sess, model, data, config, logger):
-        super(CNNTrainer, self).__init__(sess, model, data, config, logger)
+        super(LSTMTrainer, self).__init__(sess, model, data, config, logger)
 
     def train_step(self, batch):
         feed_dict = {

@@ -2,9 +2,9 @@
 from base.base_train import BaseTrain
 
 
-class CNNTrainer(BaseTrain):
+class NBowTrainer(BaseTrain):
     def __init__(self, sess, model, data, config, logger):
-        super(CNNTrainer, self).__init__(sess, model, data, config, logger)
+        super(NBowTrainer, self).__init__(sess, model, data, config, logger)
 
     def train_step(self, batch):
         feed_dict = {
@@ -24,7 +24,7 @@ class CNNTrainer(BaseTrain):
         feed_dict = {
             self.model.input_x: batch.sent,
             self.model.input_x_len: batch.sent_len,
-            self.model.drop_keep_rate: 1.0,
+            self.model.drop_keep_rate: 1.0
         }
         to_return = {
             'predict_label': self.model.predict_label,
