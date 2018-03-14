@@ -11,7 +11,7 @@ Project architecture
 
 <div align="center">
 
-<img align="center" hight="600" width="600" src="https://github.com/Mrgemy95/Tensorflow-Project-Templete/blob/master/figures/diagram.png?raw=true">
+<img align="center" hight="600" width="600" src="https://github.com/gongwu/EmojisPrediction/blob/master/figures/diagram.png">
 
 </div>
 
@@ -19,21 +19,15 @@ Model architecture
 --------------
 NBow
 <div align="center">
-
-<img align="center" hight="600" width="600" src="https://github.com/Mrgemy95/Tensorflow-Project-Templete/blob/master/figures/nbow.png?raw=true">
-
+<img align="center" hight="100%" width="100%" src="https://github.com/gongwu/EmojisPrediction/blob/master/figures/nbow.png">
 </div>
 
 CNN
 <div align="center">
-
-<img align="center" hight="600" width="600" src="https://github.com/Mrgemy95/Tensorflow-Project-Templete/blob/master/figures/cnn.png?raw=true">
-
+<img align="center" hight="100%" width="100%" src="https://github.com/gongwu/EmojisPrediction/blob/master/figures/cnn.png">
 </div>
 
 LSTM
 <div align="center">
-
-<img align="center" hight="600" width="600" src="https://github.com/Mrgemy95/Tensorflow-Project-Templete/blob/master/figures/lstm.png?raw=true">
-
+<img align="center" hight="100%" width="100%" src="https://github.com/gongwu/EmojisPrediction/blob/master/figures/lstm.png">
 </div>
