@@ -5,10 +5,9 @@ __pycache__/
 
 # C extensions
 *.so
-.idea
+
 # Distribution / packaging
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -79,11 +78,10 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# dotenv
+# Environments
 .env
-
-# virtualenv
 .venv
+env/
 venv/
 ENV/
 
@@ -99,9 +97,3 @@ ENV/
 
 # mypy
 .mypy_cache/
-/experiments/
-.idea/Tensorflow-architecture-templete.iml
-.idea/misc.xml
-.idea/modules.xml
-.idea/workspace.xml
-experiments/

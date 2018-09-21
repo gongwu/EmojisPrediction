@@ -1,7 +1,7 @@
 # coding: utf-8
+import config
 import pandas as pd
-from configs import config_twitter
-from utils.confusion_matrix import Alphabet, ConfusionMatrix
+from confusion_matrix import Alphabet, ConfusionMatrix
 
 DICT_LABEL_TO_INDEX = {"_red_heart_": 0, "_smiling_face_with_hearteyes_": 1, "_face_with_tears_of_joy_": 2, "_two_hearts_": 3,
                "_fire_": 4, "_smiling_face_with_smiling_eyes_": 5, "_smiling_face_with_sunglasses_": 6, "_sparkles_": 7,
@@ -26,12 +26,13 @@ def confusion_matrix(gold, pred):
         print("\t%5d\t| " % cur + " \t".join(count))
 
 
+
 def Evaluation(gold_file_path, predict_file_path):
     with open(gold_file_path) as gold_file, open(predict_file_path) as predict_file:
         gold_list = [int(line.strip().split('\t')[0]) for line in gold_file]
         predicted_list = [int(line.strip().split("\t")[0]) for line in predict_file]
-        predict_labels = [config_twitter.id2category[int(predict)] for predict in predicted_list]
-        gold_labels = [config_twitter.id2category[int(gold)] for gold in gold_list]
+        predict_labels = [config.id2category[int(predict)] for predict in predicted_list]
+        gold_labels = [config.id2category[int(gold)] for gold in gold_list]
         binary_alphabet = Alphabet()
         for i in range(20):
             binary_alphabet.add(DICT_INDEX_TO_LABEL[i])
@@ -59,7 +60,6 @@ def Evaluation_lst(gold_label, predict_label, print_all=False):
     overall_accuracy = cm.get_accuracy()
     return overall_accuracy
 
-
 def Evaluation_all(gold_label, predict_label):
     binary_alphabet = Alphabet()
     for i in range(20):
@@ -74,10 +74,10 @@ def Evaluation_all(gold_label, predict_label):
 
 def case_study(gold_file_path, predict_file_path):
     with open(gold_file_path) as gold_file, open(predict_file_path) as predict_file:
-        # gold_list = []
-        # for line in gold_file:
-        #     gold_list.append([int(line.strip().split('\t')[0]), line.strip().split('\t')[1]])
-        gold_list = [int(line.strip().split('\t')[0]) for line in gold_file]
+        gold_list = []
+        for line in gold_file:
+            gold_list.append([int(line.strip().split('\t')[0]), line.strip().split('\t')[1]])
+        # gold_list = [int(line.strip().split('\t')[0]) for line in gold_file]
         predicted_list = [int(line.strip().split("\t")[0]) for line in predict_file]
         error_list = []
         for i in range(len(gold_list)):
@@ -90,15 +90,10 @@ def case_study(gold_file_path, predict_file_path):
         return case_data
 
 
-# if __name__ == '__main__':
-#     dev_overall_accuracy, dev_macro_p, dev_macro_r, dev_macro_f1 = Evaluation(config.dev_predict_file,
-#                                                               config.dev_gold_final_file)
-#     test_overall_accuracy, test_macro_p, test_macro_r, test_macro_f1 = Evaluation(config.test_predict_file,
-#                                                               config.test_gold_file)
-#     print('dev: overall_accuracy = {:.5f}, macro_p = {:.5f}, macro_r = {:.5f}, macro_f1 = {:.5f}\n'
-#           'test: overall_accuracy = {:.5f}, macro_p = {:.5f}, macro_r = {:.5f}, macro_f1 = {:.5f}\n'
-#           .format(dev_overall_accuracy, dev_macro_p, dev_macro_r, dev_macro_f1, test_overall_accuracy, test_macro_p, test_macro_r, test_macro_f1))
-    # case_list = case_study(config.test_predict_file, config.test_gold_file)
-    # pd.set_option('display.width', 1000)
-    # print(case_list.head(10000))
+if __name__ == '__main__':
+    overall_accuracy, macro_p, macro_r, macro_f1 = Evaluation(config.dev_gold_new_file, config.dev_predict_file)
+    print('overall_accuracy = {:.5f}, macro_p = {:.5f}, macro_r = {:.5f}, macro_f1 = {:.5f}'.format(overall_accuracy, macro_p, macro_r, macro_f1))
+    case_list = case_study(config.dev_gold_final_file, config.dev_predict_file)
+    pd.set_option('display.width', 1000)
+    print(case_list.head(10000))
 

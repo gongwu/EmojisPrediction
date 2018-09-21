@@ -1,7 +1,29 @@
-import argparse
+# -*- coding:utf-8 -*-
+"""
+@author rgtjf
+
+@Update 170924
+==============
+1. ADD function logging part
+2. ADD function config part
+3. ADD Class DictVocab
+
+@Update 170811
+==============
+1. ADD      load_embedding_from_text
+    - from raw embedding
+2. MODIFY   load_word_embedding
+    - minor update
+
+@Update 170804
+==============
+Version 1.0
+"""
+
+from __future__ import print_function
+
 import time
-import csv
-import math
+import csv, math
 import codecs
 import logging
 import configparser
@@ -12,17 +34,7 @@ import os
 import pickle
 import six
 import re
-
-
-def get_args():
-    argparser = argparse.ArgumentParser(description=__doc__)
-    argparser.add_argument(
-        '-c', '--config',
-        metavar='C',
-        default='../configs/config.json',
-        help='The Configuration file')
-    args = argparser.parse_args()
-    return args
+import codecs
 
 
 def fn_timer(function):
@@ -290,7 +302,7 @@ def sentence_vectorize_features(sa, sb, idf_weight, convey='idf'):
     ensure idf_weight contains all words in seq1 and seq2
     to achieve this, idf_weight format should be the same with seq1
     e.g., train_instance.get_word(type='lemma', lower=True)
-    :param idf_weight: dic
+    :param idf_weight: dict
     :param convey: 'idf' or 'count'
     :return:
     """
@@ -363,7 +375,7 @@ def load_word_embedding(vocab, emb_file, n_dim,
     UPDATE_0: save the oov words in oov.p (pickle)
     Pros: to analysis why the this happen !!!
     ===
-    :param vocab: dic, vocab['__UNK__'] = 0
+    :param vocab: dict, vocab['__UNK__'] = 0
     :param emb_file: str, file_path
     :param n_dim:
     :param pad_word
@@ -418,7 +430,7 @@ def load_word_embedding(vocab, emb_file, n_dim,
 def load_embedding_from_text(emb_file, n_dim,
                              pad_word='__PAD__', unk_word='__UNK__'):
     """
-    :return: embed: numpy, vocab2id: dic
+    :return: embed: numpy, vocab2id: dict
     """
     print('==> loading embed from txt')
 
@@ -666,7 +678,7 @@ def ngram_match(sa, sb, n):
 
 
 # 对hashtag进行分词 e.g., #callmebaby -> call me baby
-class Segmenter(object):
+class Segmenter:
     def __words(self, text):
         return re.findall("[a-z]+", text.lower())
 
@@ -674,7 +686,7 @@ class Segmenter(object):
         return self.dictionary.get(word, 0) / self.total
 
     def __init__(self, dictionary):
-        self.dictionary = pickle.load(codecs.open(dictionary, 'rb'), encoding='iso-8859-1')
+        self.dictionary = pickle.load(codecs.open(dictionary))
         self.maxWordLength = max(map(len, self.dictionary))
         self.total = float(sum(self.dictionary.values()))
 
@@ -695,3 +707,5 @@ class Segmenter(object):
         words.reverse()
         str_ = " ".join(words)
         return str_
+
+

@@ -1,64 +1,26 @@
 # coding: utf8
 import random
 import numpy as np
-import re
-import os
+import re, os
 import pickle
 import json
 import itertools
-import codecs
+import utils
+import config
+import nltk
+from collections import Counter
+from dict_loader import Dict_loader
 
 
 pad_word = '__PAD__'
 unk_word = '__UNK__'
-# set_neg = set([t.strip() for t in open(config.NEGATION_PATH)])
-# punc = set([".", ",", "?", "!", "...", ";"])
-
-
-def read_data(file_list):
-    """
-    load data from file list
-    Args: file_list:
-    Returns:
-    """
-    if type(file_list) != list:
-        file_list = [file_list]
-
-    examples = []
-    for file in file_list:
-        with codecs.open(file, 'r', encoding='utf8') as f:
-            for line in f:
-                items = line.strip().split('\t')
-                label = items[0]
-                sent = items[1].split()
-                examples.append((sent, label))
-    return examples
-
-
-def read_json_data(file_list, segmenter):
-    if type(file_list) != list:
-        file_list = [file_list]
-    examples = []
-    for file in file_list:
-        tweets = load_tweets(file)
-        for tweet in tweets:
-            # add the feature
-            sents = get_text_unigram(tweet, segmenter)
-            lemmas = get_text_lemmas(tweet, segmenter)
-            ners = get_text_ner(tweet)
-            pos = get_text_pos(tweet)
-            label = tweet["label"]
-            id = 0
-            # if file == config.train_file:
-            #     id = tweet["id"]
-            text = tweet["cleaned_text"]
-            examples.append((sents, label, ners, pos, lemmas, id, text))
-    return examples
+Segmenter = utils.Segmenter(config.VOCAB_NORMAL_WORDS_PATH)  # 对hashtag进行分词
+set_neg = set([t.strip() for t in open(config.NEGATION_PATH)])
+punc = set([".", ",", "?", "!", "...", ";"])
 
 
 def load_tweets(file_path):
-    with open(file_path, 'r', encoding="utf-8") as f:
-        tweet_list = json.load(f)
+    tweet_list = json.load(open(file_path, "r"), encoding="utf-8")
     return tweet_list
 
 
@@ -68,19 +30,19 @@ def set_dict_key_value(dict, key):
     dict[key] += 1
 
 
-def get_text_unigram(microblog, segmenter):
+def get_text_unigram(microblog):
     tokens = microblog["parsed_text"]["tokens"]  # clean_text做预处理得到的分词结果
     ners = microblog["parsed_text"]["ners"]
     pos = microblog["parsed_text"]["pos"]
-    wanted_tokens = _process_ngram_tokens(tokens, pos, ners, segmenter)  # 去掉各种number及长度小于2的词
+    wanted_tokens = _process_ngram_tokens(tokens, pos, ners)  # 去掉各种number及长度小于2的词
     return list(itertools.chain(*wanted_tokens))
 
 
-def get_text_lemmas(microblog, segmenter):
+def get_text_lemmas(microblog):
     tokens = microblog["parsed_text"]["lemmas"]  # clean_text做预处理得到的分词结果
     ners = microblog["parsed_text"]["ners"]
     pos = microblog["parsed_text"]["pos"]
-    wanted_tokens = _process_ngram_tokens(tokens, pos, ners, segmenter)  # 去掉各种number及长度小于2的词
+    wanted_tokens = _process_ngram_tokens(tokens, pos, ners)  # 去掉各种number及长度小于2的词
     return list(itertools.chain(*wanted_tokens))
 
 
@@ -107,6 +69,216 @@ def get_text_pos(microblog):
     return list(itertools.chain(*poss))  # 将多个list拼为1个list
 
 
+# 是否包含！，是否包含多个！，是否包含？，是否包含多个？，是否包含？！或！？
+# 最后一个token中是否包含！，最后一个token中是否包含？，！的个数，？的个数
+def get_text_punction(microblog):
+    has_exclamation = 0
+    has_several_exclamation = 0
+    has_question = 0
+    has_several_question = 0
+    has_exclamation_question = 0
+    end_exclamation = 0
+    end_question = 0
+    num_exclamation = 0
+    num_question = 0
+    # print microblog["parsed_text"]["tokens"]
+    if microblog["parsed_text"]["tokens"]:
+        tokens = []  # 本句子的所有tokens
+        token_lists = microblog["parsed_text"]["tokens"]
+        for token_list in token_lists:
+            for word in token_list:
+                tokens.append(word)
+            if "!" in tokens[-1]:
+                end_exclamation = 1
+            if "?" in tokens[-1]:
+                end_question = 1
+        sentence = " ".join(tokens)
+        # print tokens
+        exclamation_list = re.findall("!", sentence)
+        num_exclamation = len(exclamation_list)
+        if len(exclamation_list) != 0:  # 无感叹号
+            has_exclamation = 1
+            if len(exclamation_list) > 2:
+                has_several_exclamation = 1
+
+        question_list = re.findall("\?", sentence)
+        num_question = len(question_list)
+        if len(question_list) != 0:
+            has_question = 1
+            if len(question_list) > 2:
+                has_several_question = 1
+
+        excla_ques_list = re.findall("!\?", sentence)
+        ques_excla_list = re.findall("\?!", sentence)
+        if excla_ques_list or ques_excla_list:
+            has_exclamation_question = 1
+        if "!" in tokens[-1]:
+            end_exclamation = 1
+        if "?" in tokens[-1]:
+            end_question = 1
+    feature = [has_exclamation, has_several_exclamation, has_question, has_several_question, has_exclamation_question]
+    feature.append(end_exclamation)
+    feature.append(end_question)
+    feature.append(num_exclamation)
+    feature.append(num_question)
+    return feature
+
+
+def sentilexi(microblog):
+    feature = []
+    # dict的value值都是1维score（若字典中本来有pos_score和neg_score，则pos_score-neg_score）
+    Lexicon_dict_list = [
+        Dict_loader().dict_BL,
+        Dict_loader().dict_GI,
+        Dict_loader().dict_IMDB,
+        Dict_loader().dict_MPQA,
+        Dict_loader().dict_NRCE,
+        Dict_loader().dict_AF,
+        Dict_loader().dict_NRC140_U,
+        Dict_loader().dict_NRCH_U
+    ]
+
+    # tokens = list(itertools.chain(*
+    # 将否定词后的4个词加上_NEG后缀
+    tokens = reverse_neg(microblog)
+
+    for Lexicon in Lexicon_dict_list:
+        score = []
+        for word in tokens:
+            flag = -0.8 if word.endswith("_NEG") else 1
+            word = word.replace("_NEG", "")
+            if word in Lexicon:
+                score.append(Lexicon[word] * flag)
+
+        if len(score) == 0:
+            feature += [0] * 11
+            continue
+
+        countPos, countNeg, countNeu = 0, 0, 0
+        length = len(score) * 1.0
+        for s in score:
+            if s > 0.49:
+                countPos += 1
+            elif s < -0.49:
+                countNeg += 1
+            else:
+                countNeu += 1
+
+        feature += [countPos, countNeg, countNeu, countPos / length, countNeg / length, countNeu / length, max(score),
+                    min(score)]
+
+        finalscore = sum(score)
+        # feature.append(finalscore)
+        if finalscore > 0:
+            feature += [1, 0]
+        elif finalscore < 0:
+            feature += [0, 1]
+        else:
+            feature += [0, 0]
+
+        # pos_score = [t for t in score if t > 0]
+        # neg_score = [t for t in score if t < 0]
+        # feature.append(sum(pos_score))
+        # feature.append(sum(neg_score))
+
+        # if pos_score:
+        #     feature.append(pos_score[-1])
+        # else:
+        #     feature.append(0)
+        # if neg_score:
+        #     feature.append(neg_score[-1])
+        # else:
+        #     feature.append(0)
+
+        word = tokens[-1]
+        flag = -0.8 if word.endswith("_NEG") else 1
+        word = word.replace("_NEG", "")
+        if word in Lexicon:
+            feature.append(Lexicon[word] * flag)
+        else:
+            feature.append(0)
+
+    # Bigram Lexicons
+    for Lexicon in [Dict_loader().dict_NRC140_B, Dict_loader().dict_NRCH_B]:
+        score = []
+        bigram = list(nltk.ngrams(tokens, 2))
+        for index, bi in enumerate(bigram):
+            flag = -0.8 if bi[0].endswith("_NEG") and bi[1].endswith("_NEG") else 1
+            bi = (bi[0].replace("_NEG", ""), bi[1].replace("_NEG", ""))
+            bigram[index] = bi
+            if bi in Lexicon:
+                score.append(Lexicon[bi] * flag)
+        if not score:
+            feature += [0] * 11
+            continue
+
+        countPos, countNeg, countNeu = 0, 0, 0
+        length = len(score) * 1.0
+        for s in score:
+            if s > 0.49:
+                countPos += 1
+            elif s < -0.49:
+                countNeg += 1
+            else:
+                countNeu += 1
+
+        feature += [countPos, countNeg, countNeu, countPos / length, countNeg / length, countNeu / length, max(score),
+                    min(score)]
+
+        finalscore = sum(score)
+        # feature.append(finalscore)
+        if finalscore > 0:
+            feature += [1, 0]
+        elif finalscore < 0:
+            feature += [0, 1]
+        else:
+            feature += [0, 0]
+
+        pos_score = [t for t in score if t > 0]
+        neg_score = [t for t in score if t < 0]
+        # feature.append(sum(pos_score))
+        # feature.append(sum(neg_score))
+        # if pos_score:
+        #     feature.append(pos_score[-1])
+        # else:
+        #     feature.append(0)
+        # if neg_score:
+        #     feature.append(neg_score[-1])
+        # else:
+        #     feature.append(0)
+        bi = bigram[-1]
+        flag = -0.8 if bi[0].endswith("_NEG") and bi[1].endswith("_NEG") else 1
+        bi = (bi[0].replace("_NEG", ""), bi[1].replace("_NEG", ""))
+        if bi in Lexicon:
+            feature.append(Lexicon[bi] * flag)
+        else:
+            feature.append(0)
+    return feature
+
+
+# 将否定词后的4个词加上_NEG后缀
+def reverse_neg(microblog):
+    mtoken = []
+    tokens = list(itertools.chain(*microblog["parsed_text"]["tokens"]))
+    sentence = " ".join(tokens)
+    length = len(tokens)
+
+    index = 0
+    while(index != length):
+        cur_token = tokens[index].lower()
+        mtoken.append(cur_token)
+        if cur_token in set_neg or cur_token.endswith("n't"):
+            for i in range(index + 1, min(length, index + 4)):  # 将否定词后的4个词带上"_NEG"
+                index = i
+                cur_token_1 = tokens[i].lower()
+                if tokens[i] in punc:  # 若遇到标点符号则停止加"_NEG"
+                    mtoken.append(cur_token_1)
+                    break
+                mtoken.append(cur_token_1 + "_NEG")
+        index += 1
+    return mtoken
+
+
 def removeItemsInDict(dict, threshold=1):
     if threshold > 1:
         for key in list(dict.keys()):
@@ -117,7 +289,7 @@ def removeItemsInDict(dict, threshold=1):
     return dict
 
 
-def _process_ngram_tokens(tokens, pos, ners, segmenter):
+def _process_ngram_tokens(tokens, pos, ners):
     wanted_tokens = []
     for sent_words, sent_pos, sent_ners in zip(tokens, pos, ners):
         wanted_sent_words = []
@@ -143,7 +315,7 @@ def _process_ngram_tokens(tokens, pos, ners, segmenter):
                 tag = 1
             if tag == 1:
                 if len(word) >= 2:
-                    words = hashtagSegment(segmenter, word)
+                    words = hashtagSegment(word)
                     wanted_sent_words += words
                     continue
                 else:
@@ -153,9 +325,9 @@ def _process_ngram_tokens(tokens, pos, ners, segmenter):
             punctuations = ["@", "'", ":", ";", "?", "!", "=", "_", "^", "*", "-", ".", "`"]
             for punctuation in punctuations:
                 if word.startswith(punctuation):
-                # word = word[1:].lower()
+                #     word = word[1:].lower()
                 # elif word.endswith(punctuation):
-                # word = word[:-1].lower()
+                #     word = word[:-1].lower()
                     tag = 1
                     break
             if tag == 1:
@@ -169,6 +341,15 @@ def _process_ngram_tokens(tokens, pos, ners, segmenter):
             wanted_sent_words.append(word)
         wanted_tokens.append(wanted_sent_words)
     return wanted_tokens
+
+
+def hashtagSegment(word):
+    token2 = []
+    token1 = (Segmenter.get(word)).split(" ")  # 对hashtag进行分词
+    for word_ in token1:
+        if len(word_) >= 2:
+            token2.append(word_)
+    return token2
 
 
 def save_params(params, fname):
@@ -491,7 +672,7 @@ def load_fasttext(word2index, emb_file, n_dim=100):
     UPDATE_0: save the oov words in oov.p (pickle)
     Pros: to analysis why the this happen !!!
     ===
-    :param word2index: dic, word2index['__UNK__'] = 0
+    :param word2index: dict, word2index['__UNK__'] = 0
     :param emb_file: str, file_path
     :param n_dim:
     :return: np.array(n_words, n_dim)
@@ -499,14 +680,14 @@ def load_fasttext(word2index, emb_file, n_dim=100):
     pass
 
 
-def load_word_embedding(word2index, emb_file, config, n_dim=300):
+def load_word_embedding(word2index, emb_file, n_dim=300):
     """
     UPDATE_1: fix the
     ===
     UPDATE_0: save the oov words in oov.p (pickle)
     Pros: to analysis why the this happen !!!
     ===
-    :param word2index: dic, word2index['__UNK__'] = 0
+    :param word2index: dict, word2index['__UNK__'] = 0
     :param emb_file: str, file_path
     :param n_dim:
     :return: np.array(n_words, n_dim)
@@ -554,7 +735,7 @@ def load_word_embedding(word2index, emb_file, config, n_dim=300):
 
 def load_embed_from_text(emb_file, token_dim):
     """
-    :return: embed: numpy, vocab2id: dic
+    :return: embed: numpy, vocab2id: dict
     """
     print('==> loading embed from txt')
 
@@ -580,24 +761,6 @@ def load_embed_from_text(emb_file, token_dim):
     return np.array(embed, dtype=np.float32), vocab2id
 
 
-def cout_distribution(examples):
-    label_count = np.zeros(20)
-    for example in examples:
-        label_count[int(example[1])] += 1
-    sum = np.sum(label_count)
-    for i in label_count:
-        print(i / sum * 100), "%", " ", i
-
-
-def hashtagSegment(segmenter, word):
-    token2 = []
-    token1 = (segmenter.get(word)).split(" ")  # 对hashtag进行分词
-    for word_ in token1:
-        if len(word_) >= 2:
-            token2.append(word_)
-    return token2
-
-
 class Batch(object):
     """
     Tricks:
@@ -617,3 +780,56 @@ class Batch(object):
         else:
             value = getattr(self, name)
         return value
+
+
+def read_pure_data(file_list):
+    if type(file_list) != list:
+        file_list = [file_list]
+    examples = []
+    for file in file_list:
+        tweets = load_tweets(file)
+        for tweet in tweets:
+            sents = get_text_unigram(tweet)
+            label = tweet["label"]
+            examples.append((label, sents))
+    return examples
+
+
+def cout_distribution(examples):
+    label_count = np.zeros(20)
+    for example in examples:
+        label_count[int(example[1])] += 1
+    sum = np.sum(label_count)
+    for i in label_count:
+        print(i / sum * 100), "%", " ", i
+
+
+def create_top_key():
+    examples = read_pure_data(config.train_file)
+    data_dict = {}
+    for example in examples:
+        if int(example[0]) not in data_dict:
+            data_dict[int(example[0])] = example[1]
+        else:
+            data_dict[int(example[0])].extend(example[1])
+
+    stop_word = []
+    with open(config.STOP_WORD_PATH, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            line = line.strip('\n')
+            stop_word.append(line)
+
+    with open(config.top_key_file, 'w') as f:
+        for key in data_dict.keys():
+            data_dict[key] = sorted(dict(Counter(data_dict[key])).items(), key=lambda d: d[1], reverse=True)
+            top_key = []
+            for value in data_dict[key]:
+                if value[0] not in stop_word:
+                    top_key.append(value)
+                    if len(top_key) == 200:
+                        break
+            f.write(str(key) + "\t")
+            for word in top_key:
+                f.write(word[0] + '\t')
+            f.write('\n')

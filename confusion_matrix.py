@@ -12,7 +12,6 @@ class ConfusionMatrix(object):
     For more information on confusion matrix en.wikipedia.org/wiki/Confusion_matrix"""
 
     INIT_NUM_CLASSES = 20
-
     def __init__(self, alphabet=None):
         if alphabet is None:
             self.alphabet = Alphabet()
@@ -46,6 +45,7 @@ class ConfusionMatrix(object):
             self.matrix[prediction_index, true_answer_index] += 1
             #XXX: this will fail if the prediction_index is greater than
             # the initial capacity. I should grow the matrix if this crashes
+
 
     def add_list(self, predictions, true_answers):
         for p, t in zip(predictions, true_answers):
@@ -94,6 +94,9 @@ class ConfusionMatrix(object):
         recall = self.matrix[index, index] / sum(self.matrix[:, index])
         f1 = (2 * precision * recall) / (precision + recall)
         return (precision, recall, f1)
+
+
+
 
     def print_summary(self):
         correct = 0

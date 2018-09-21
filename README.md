@@ -1,33 +1,25 @@
+# SemEval 2018 Task 2: Multilingual Emoji Prediction
 
--  [Project architecture](#project-architecture)
--  [Model architecture](#model-architecture)
-    - [NBoW](#NBoW)
-    - [CNN](#CNN)
-    - [LSTM](#LSTM)
+## About this code
 
+This is the code by [ECNU](http://aclweb.org/anthology/S18-1068) submitted to SemEval 2018 Task 2. The final model achieves 33.35 Macro
+F-score score on the test set and ranks 5th among all the participants. 
 
-Project architecture
---------------
+## Installation
 
-<div align="center">
+```
+# download the repo
+git clone https://github.com/gongwu/SemEval2018-Task2-EmojisPrediction.git
+# download the dataset
+# run the model
+python main.py
+```
 
-<img align="center" hight="600" width="600" src="https://github.com/gongwu/EmojisPrediction/blob/master/figures/diagram.png">
+## Results on Dev
 
-</div>
-
-Model architecture
---------------
-NBow
-<div align="center">
-<img align="center" hight="100%" width="100%" src="https://github.com/gongwu/EmojisPrediction/blob/master/figures/nbow.png">
-</div>
-
-CNN
-<div align="center">
-<img align="center" hight="100%" width="100%" src="https://github.com/gongwu/EmojisPrediction/blob/master/figures/cnn.png">
-</div>
-
-LSTM
-<div align="center">
-<img align="center" hight="100%" width="100%" src="https://github.com/gongwu/EmojisPrediction/blob/master/figures/lstm.png">
-</div>
+|          Model           | Macro F1 |
+| :----------------------: | :------: |
+| Traditional NLP Features |  34.63   |
+|   Deep Learning Model    |  32.59   |
+|    Combination Model     |  35.21   |
+|      Ensemble Model      |  35.57   |
